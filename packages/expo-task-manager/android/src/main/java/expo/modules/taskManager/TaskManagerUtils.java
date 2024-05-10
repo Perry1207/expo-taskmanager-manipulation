@@ -198,12 +198,18 @@ public class TaskManagerUtils implements TaskManagerUtilsInterface {
     return createTaskIntent(context, appScopeKey, taskName, flags);
   }
 
-  private JobInfo createJobInfo(int jobId, ComponentName jobService, PersistableBundle extras) {
-    return new JobInfo.Builder(jobId, jobService)
-      .setExtras(extras)
-      .setMinimumLatency(0)
-      .setOverrideDeadline(DEFAULT_OVERRIDE_DEADLINE)
-      .build();
+ private JobInfo createJobInfo(int jobId, ComponentName jobService, PersistableBundle extras) {
+    JobInfo.Builder jobBuilder = new JobInfo.Builder(jobId, jobService).setExtras(extras);
+    if (Build.VERSION.SDK_INT < 28) {
+      jobBuilder.setMinimumLatency(1).setOverrideDeadline(DEFAULT_OVERRIDE_DEADLINE);
+      return jobBuilder.build();
+    }
+    if (Build.VERSION.SDK_INT < 31) {
+      jobBuilder.setOverrideDeadline(DEFAULT_OVERRIDE_DEADLINE).setImportantWhileForeground(true);
+      return jobBuilder.build();
+    }
+    jobBuilder.setExpedited(true);
+    return jobBuilder.build();
   }
 
   private JobInfo createJobInfo(Context context, TaskInterface task, int jobId, List<PersistableBundle> data) {
